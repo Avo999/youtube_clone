@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.post('/register', validationMiddleware(UserCreateSchema), UserController.userRegister);
 router.post('/login', validationMiddleware(UserLogInSchema), UserController.userLogin);
+router.post('/google', UserController.googleAuth);
+
 router.put('/:id', checkAuth, UserController.updateUser);
 router.get('/find/:id', UserController.getUser);
 router.delete('/:id', checkAuth, UserController.deleteUser);

@@ -1,5 +1,11 @@
-import React from "react";
+import React, {useCallback, useState} from "react";
 import styled from "styled-components";
+import UserRequests from "../api/UserRequests";
+import {useDispatch, useSelector} from "react-redux";
+import {fetchLogin, loginFailure, loginStart, loginSuccess, UserAuthState} from "../redux/UserSlice";
+import {IUserLogin} from "../types/UserTypes";
+import {auth, provider} from "../firebase";
+import { signInWithPopup } from 'firebase/auth';
 
 const Container = styled.div`
   display: flex;
@@ -63,20 +69,91 @@ const Link = styled.span`
   margin-left: 30px;
 `;
 
+type FormValues = {
+    name: string;
+    email: string;
+    password: string;
+};
+
+
 const SignIn = () => {
+
+    const [loginValues, setLoginValues] = useState<IUserLogin>({
+        email: "",
+        password: ""
+    });
+
+    const [signUpValues, setSignUpValues] = useState<FormValues>({
+        name: "",
+        email: "",
+        password: ""
+    });
+    const dispatch = useDispatch();
+    const selector = useSelector((state: UserAuthState) => state.user);
+    
+    console.log(selector)
+    const handleLoginInputValues = useCallback(async (event: React.ChangeEvent<HTMLInputElement>,value: string)  => {
+        setLoginValues((prev) => (
+            {...prev, [value]: event.target.value}
+        ))
+    } , []);
+
+    const handleSignUpInputValues = useCallback(async (event: React.ChangeEvent<HTMLInputElement>,value: string)  => {
+        setSignUpValues((prev) => (
+            {...prev, [value]: event.target.value}
+        ))
+    } , [])
+
+    const handleLogin = useCallback(async (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+
+        // @ts-ignore
+        dispatch(fetchLogin(loginValues))
+
+    }, [loginValues]);
+
+    const handleSignUp = useCallback(async (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+
+        const res = await UserRequests.userCreate(signUpValues)
+        console.log(res)
+    }, [signUpValues]);
+
+    const clickOnGoogleBtn = useCallback(async () => {
+        try {
+            dispatch(loginStart())
+            signInWithPopup(auth, provider)
+                .then(res => {
+                    UserRequests.userGoogleAuth({
+                        name: res.user.displayName,
+                        email: res.user.email,
+                        image: res.user.photoURL
+                    })
+                        .then(res => {
+                            dispatch(loginSuccess(res.data))
+                        })
+
+                })
+
+        } catch (e) {
+            dispatch(loginFailure())
+        }
+    }, [])
     return (
         <Container>
             <Wrapper>
                 <Title>Sign in</Title>
                 <SubTitle>to continue to LamaTube</SubTitle>
-                <Input placeholder="username" />
-                <Input type="password" placeholder="password" />
-                <Button>Sign in</Button>
+                <Input placeholder="username" onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleLoginInputValues(event,"email")}/>
+                <Input type="password" placeholder="password" onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleLoginInputValues(event,"password")}/>
+                <Button onClick={handleLogin}>Sign in</Button>
                 <Title>or</Title>
-                <Input placeholder="username" />
-                <Input placeholder="email" />
-                <Input type="password" placeholder="password" />
-                <Button>Sign up</Button>
+                <button onClick={clickOnGoogleBtn}>Sign In With Google</button>
+                <Title>or</Title>
+                <Input placeholder="username" onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleSignUpInputValues(event,"name")}/>
+                <Input placeholder="email" onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleSignUpInputValues(event,"email")}/>
+                <Input type="password" placeholder="password" onChange={(event: React.ChangeEvent<HTMLInputElement>) => handleSignUpInputValues(event,"password")}/>
+                <Button onClick={handleSignUp}>Sign up</Button>
             </Wrapper>
             <More>
                 English(USA)

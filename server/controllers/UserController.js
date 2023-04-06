@@ -1,7 +1,8 @@
 import Helpers from "../services/Helpers";
-import User from "../models/User";
+import {Users} from "../models";
 import jwt from 'jsonwebtoken';
 import HttpError from "http-errors";
+
 
 
 class UserController {
@@ -17,13 +18,9 @@ class UserController {
                 activationCode
             });
 
-            const token = jwt.sign({
-                id: user.id,
-                email
-            }, process.env.SECRET_KEY);
+
             res.json({
-                user,
-                token
+                user
             })
         } catch (e) {
             next(e);
@@ -51,7 +48,10 @@ class UserController {
 
             res.cookie("access_cookie", token, {
                 httponly: true
-            }).status(200).json(user)
+            }).status(200).json({
+                user,
+                token
+            })
 
 
 
@@ -119,7 +119,7 @@ class UserController {
         try {
             const {id} = req.params;
  
-            const user = await User.findOne({
+            const user = await Users.findOne({
                 where: {
                     id
                 }
@@ -133,6 +133,40 @@ class UserController {
                 user
             })
 
+        } catch (e) {
+            next(e)
+        }
+    }
+    static googleAuth = async (req, res, next) => {
+        const {email, name} = req.body;
+        try {
+            const user = await Users.findOne({
+                where: {
+                    email
+                }
+            });
+            if (user) {
+                const token = jwt.sign({
+                    id: user.id,
+                    email
+                }, process.env.SECRET_KEY)
+
+                res.cookie("access_cookie", token, {
+                    httponly: true
+                }).status(200).json({
+                    user,
+                    token
+                })
+            } else {
+                const activationCode = Helpers.randomString(9);
+                const newUser = await Users.create({
+                    name,
+                    email,
+                    activationCode,
+                    fromGoogle: true
+                });
+                res.json(newUser)
+            }
         } catch (e) {
             next(e)
         }

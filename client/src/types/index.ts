@@ -9,11 +9,12 @@ export interface IVideo {
     updatedAt: Date,
     userId: number
 }
-export interface IUser {
-    id: number,
-    name: string,
-    email: string,
-    image: string,
-    createdAt?: Date,
-    updatedAt?: Date
+
+
+export type Partial<T> = {
+    [P in keyof T]? : T[P]
+}
+
+export type PartialNull<T> = {
+    [P in keyof T]?: T[P] | null
 }

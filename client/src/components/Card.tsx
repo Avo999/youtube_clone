@@ -1,8 +1,10 @@
 import React, {FC, useEffect, useState} from "react";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
-import { IUser, IVideo } from "../types";
+import { IVideo } from "../types";
+import {IUser} from "../types/UserTypes";
 import UserRequests from "../api/UserRequests";
+import {Partial} from "../types";
 
 const Container = styled.div`
   width: ${(props: Partial<CardProps>) => props.type !== "sm" && "360px"};
@@ -57,9 +59,7 @@ interface CardProps {
     video: IVideo,
 }
 
-type Partial<T> = {
-    [P in keyof T]? : T[P]
-}
+
 const Card: FC<CardProps> = ({ type , video}) => {
     const [channel, setChannel] = useState<IUser | object>({});
 
